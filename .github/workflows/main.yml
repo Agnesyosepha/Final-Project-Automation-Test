@@ -1,17 +1,34 @@
-name: Automated API tests using Postman CLI
+name: Run API Tests with Newman
 
 on: push
 
 jobs:
-  automated-api-tests:
-    runs-on: windows-latest
+  newman-tests:
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Postman CLI
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Newman + HTML Reporter
         run: |
-          powershell.exe -NoProfile -InputFormat None -ExecutionPolicy AllSigned -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://dl-cli.pstmn.io/install/win64.ps1'))"
-      - name: Login to Postman CLI
-        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
-      - name: Run API tests
+          npm install -g newman
+          npm install -g newman-reporter-html
+
+      - name: Run Postman Collection using Newman
         run: |
-          postman collection run "39127740-716ea56e-aeae-4b8e-beb5-24b8c8e2c269" -e "39127740-85f8a68b-6ccb-4d5a-8626-3c49e6b8e010"
+          newman run "Final Proyek_AT.postman_collection.json" \
+          -e "Weather-Testing.postman_environment.json" \
+          --reporters cli,html \
+          --reporter-html-export newman-report.html
+
+      - name: Upload Newman HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: newman-report.html
